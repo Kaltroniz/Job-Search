@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
       - name: Validate portals/india.yml is valid YAML
         run: |
           node --input-type=module -e "import fs from 'fs'; import yaml from 'js-yaml'; yaml.load(fs.readFileSync('portals/india.yml', 'utf8')); console.log('portals/india.yml: valid YAML structure');"
