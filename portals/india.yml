@@ -12,6 +12,43 @@
 
 greenhouse:
 
+  # ── Tier 1 / HFT / Core Tech ───────────────────────────────────────────────
+  - name: Graviton Research Capital
+    slug: gravitonresearchcapital
+    tier: "1"
+    domain: hft / quant trading
+    hq: Gurgaon
+
+  - name: Tower Research Capital
+    slug: towerresearchcapital
+    tier: "1"
+    domain: hft / low latency
+    hq: Gurgaon
+
+  - name: Databricks
+    slug: databricks
+    tier: "1"
+    domain: data infra / distributed systems
+    hq: Bangalore
+
+  - name: Stripe
+    slug: stripe
+    tier: "1"
+    domain: fintech / payments
+    hq: Bangalore
+
+  - name: Rubrik
+    slug: rubrik
+    tier: "1"
+    domain: cloud data management
+    hq: Bangalore
+
+  - name: SuperApp
+    slug: superapp
+    tier: "1"
+    domain: consumer tech
+    hq: Bangalore
+
   # ── Fintech ────────────────────────────────────────────────────────────────
   - name: Enterpret
     slug: enterpret
@@ -532,6 +569,18 @@ greenhouse:
 lever:
 
   # ── Tier 1 ─────────────────────────────────────────────────────────────────
+  - name: ION Group
+    slug: ion
+    tier: "1"
+    domain: fintech / trading solutions
+    hq: Noida
+
+  - name: Hevo Data
+    slug: hevo
+    tier: "1"
+    domain: data integration / pipelines
+    hq: Bangalore
+
   - name: CRED
     slug: cred
     tier: "1"
@@ -951,6 +1000,12 @@ lever:
 ashby:
 
   # ── AI / Deep Tech ─────────────────────────────────────────────────────────
+  - name: AiPrise
+    slug: aiprise
+    tier: "1"
+    domain: identity / fraud detection
+    hq: Bangalore
+
   - name: Sarvam AI
     slug: sarvam
     tier: "1"

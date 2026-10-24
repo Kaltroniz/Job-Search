@@ -91,7 +91,7 @@ async function fetchAshby(slug) {
         signal: AbortSignal.timeout(12000) });
     if (!res.ok) return { jobs: [], err: `HTTP ${res.status}` };
     const d = await res.json();
-    return { jobs: d.jobPostings || [] };
+    return { jobs: d.jobs || d.jobPostings || [] };
   } catch(e) { return { jobs: [], err: e.message }; }
 }
 
@@ -115,13 +115,13 @@ function normLV(j, co) {
     snippet:(j.descriptionPlain||"").slice(0,300) };
 }
 function normAB(j, co) {
-  const loc = j.locationName||j.jobPostingLocations?.[0]?.locationName||"";
+  const loc = j.location || j.locationName || j.jobPostingLocations?.[0]?.locationName || j.address?.postalAddress?.addressCountry || "India";
   return { source:"ashby", company:co.name, tier:co.tier||"2",
     title:j.title||"", location:loc,
     url:`https://jobs.ashbyhq.com/${co.slug}/${j.id}`,
-    posted_at:j.publishedAt||null, department:j.departmentName||"",
+    posted_at:j.publishedAt||null, department:j.department||j.departmentName||"",
     remote:j.isRemote||loc.toLowerCase().includes("remote"),
-    snippet:(j.descriptionHtml||"").replace(/<[^>]*>/g," ").slice(0,300) };
+    snippet:(j.descriptionPlain || (j.descriptionHtml||"").replace(/<[^>]*>/g," ")).slice(0,300) };
 }
 
 // ── Matcher ───────────────────────────────────────────────────────────────────
