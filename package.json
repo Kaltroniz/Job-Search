@@ -5,6 +5,12 @@
   "type": "module",
   "scripts": {
     "scan": "node scripts/scan.mjs",
+    "scan:2027": "node scripts/search-2027-fulltime.mjs",
+    "scan:fulltime": "node scripts/search-2027-fulltime.mjs",
+    "watch:2027": "node scripts/watch-2027-sde.mjs",
+    "digest": "node scripts/daily-job-digest.mjs",
+    "seed:2027": "node scripts/seed-2027-pipeline.mjs",
+    "outreach:2027": "node scripts/referral-outreach-2027.mjs",
     "pdf": "node scripts/generate-pdf.mjs",
     "doctor": "node scripts/doctor.mjs",
     "liveness": "node scripts/check-liveness.mjs",
@@ -52,8 +58,9 @@
   "license": "MIT",
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "puppeteer": "^22.0.0",
-    "node-html-parser": "^6.1.0"
+    "node-html-parser": "^6.1.0",
+    "nodemailer": "^10.2.1",
+    "puppeteer": "^22.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

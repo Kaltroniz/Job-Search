@@ -13,8 +13,14 @@
 greenhouse:
 
   # ── Fintech ────────────────────────────────────────────────────────────────
+  - name: Enterpret
+    slug: enterpret
+    tier: "1"
+    domain: ai / dev tools
+    hq: Bangalore
+
   - name: Razorpay
-    slug: razorpay
+    slug: razorpaysoftwareprivatelimited
     tier: "1"
     domain: fintech
     hq: Bangalore

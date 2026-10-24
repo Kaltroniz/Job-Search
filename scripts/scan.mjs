@@ -33,8 +33,12 @@ function readConfig() {
     else if (inRoles && !line.match(/^\s{4}/)) inRoles = false;
   }
   const expMatch = text.match(/experience_years:\s*([\d.]+)/);
-  const expYears = expMatch ? parseFloat(expMatch[1]) : 2;
-  return { roles, expYears };
+  const expYears = expMatch ? parseFloat(expMatch[1]) : 0;
+  const fullTime2027Only = text.includes("full_time_2027_only: true") || process.argv.includes("--full-time-2027");
+  const excludeInternships = text.includes("exclude_internships: true") || fullTime2027Only;
+  const gradMatch = text.match(/graduation_year:\s*(\d+)/);
+  const gradYear = gradMatch ? gradMatch[1] : "2027";
+  return { roles, expYears, fullTime2027Only, excludeInternships, gradYear };
 }
 
 // ── Portals loader ────────────────────────────────────────────────────────────
@@ -121,24 +125,62 @@ function normAB(j, co) {
 }
 
 // ── Matcher ───────────────────────────────────────────────────────────────────
-const DATA_KEYWORDS = ["data","analytics","analyst","business intelligence","sql",
-  "python","bi","product analyst","insights","dashboard","reporting","etl","pipeline"];
-const NOISE_TERMS = ["senior director","vp ","vice president","head of","principal ",
-  "staff engineer","c++","android developer","ios developer","frontend developer",
-  "backend developer","devops","qa engineer","sdet","mobile developer"];
+const TECH_KEYWORDS = ["software","engineer","developer","backend","frontend","fullstack",
+  "data","analytics","analyst","sql","python","go","golang","c++","sde","distributed",
+  "intern","pipeline","systems","cloud","api","campus","trainee","fresher"];
+const LATERAL_TITLE_REGEX = /\b(senior|sr\.?|staff|principal|lead|architect|manager|director|vp|head|ii|iii|iv|v|2|3|4)\b/i;
+const LATERAL_EXP_REGEX = /\b([2-9]|\d{2,})\s*(\+|\s*[-–]\s*\d+)?\s*(years?|yrs?)\b/i;
+const NON_TECH_NOISE = ["finance", "accounting", "recruiting", "talent", "hr ", "people team", "creative", "communications", "sales development", "legal", "customer care", "non-tech"];
+const INTERN_TERMS = ["intern", "internship", "co-op", "apprentice"];
+const EARLY_CAREER_TERMS = [
+  "graduate software engineer", "associate software engineer", "campus", "new grad", 
+  "fresher", "sde 1", "sde i", "sde-1", "sde-i", "software engineer 1", "software engineer i", 
+  "software development engineer 1", "software development engineer i", "junior software engineer",
+  "entry level", "entry-level", "early career"
+];
 
-function matches(job, roles, maxExp) {
+function matches(job, roles, maxExp, fullTime2027Only, excludeInternships, gradYear) {
   const t = job.title.toLowerCase();
   const c = job.snippet.toLowerCase();
   const loc = job.location.toLowerCase();
+
+  // 1. Exclude non-tech noise
+  if (NON_TECH_NOISE.some(n => t.includes(n))) return false;
+
+  // 2. Exclude internships if candidate wants full-time only
+  if (excludeInternships && INTERN_TERMS.some(k => t.includes(k))) return false;
+
+  // 3. Location filter
+  const locMatch = job.remote || !job.location || loc.includes("india") ||
+    ["bangalore","bengaluru","hyderabad","mumbai","delhi","pune","chennai","gurgaon","noida","ropar","remote"]
+      .some(l => loc.includes(l));
+  if (!locMatch) return false;
+
+  // 4. Exclude senior and lateral titles
+  if (LATERAL_TITLE_REGEX.test(t)) return false;
+
+  // 5. Full-time 2027 graduate logic
+  if (fullTime2027Only) {
+    // Explicit 2027 graduate mention in title or JD
+    const mentionsGradYear = gradYear && (t.includes(gradYear) || c.includes(gradYear));
+    if (mentionsGradYear) return true;
+
+    // Explicit early career / graduate software engineer title
+    const isEarlyCareerTitle = EARLY_CAREER_TERMS.some(k => t.includes(k));
+    if (isEarlyCareerTitle) return true;
+
+    // Reject if snippet specifies multi-year lateral experience
+    if (LATERAL_EXP_REGEX.test(c)) return false;
+
+    // Check if role matches target roles (e.g. Software Engineer, Backend Engineer)
+    const titleMatch = roles.some(r => t.includes(r.toLowerCase()));
+    return titleMatch;
+  }
+
   const titleMatch = roles.some(r => t.includes(r.toLowerCase()) ||
     r.toLowerCase().split(" ").some(w => w.length > 4 && t.includes(w)));
-  const kwMatch = !titleMatch && DATA_KEYWORDS.filter(k => c.includes(k)).length >= 3;
-  const locMatch = job.remote || !job.location || loc.includes("india") ||
-    ["bangalore","hyderabad","mumbai","delhi","pune","chennai","gurgaon","noida","remote"]
-      .some(l => loc.includes(l));
-  const noNoise = !NOISE_TERMS.some(n => t.includes(n));
-  return (titleMatch || kwMatch) && locMatch && noNoise;
+  const kwMatch = !titleMatch && TECH_KEYWORDS.filter(k => c.includes(k)).length >= 3;
+  return titleMatch || kwMatch;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -146,12 +188,13 @@ const args = process.argv.slice(2);
 const boardFilter = args.find(a => a.startsWith("--board="))?.split("=")[1];
 const jsonMode = args.includes("--json");
 
-const { roles, expYears } = readConfig();
+const { roles, expYears, fullTime2027Only, excludeInternships, gradYear } = readConfig();
 const portals = readPortals();
 const results = [], errors = [];
 
 if (!jsonMode) {
   console.log(`\n🔍 career-ops-india scanner`);
+  console.log(`   Mode: ${fullTime2027Only ? `FULL-TIME ONLY — Class of ${gradYear} Graduates (No Internships)` : `Standard (${roles.join(", ")})`}`);
   console.log(`   Roles: ${roles.join(", ")}`);
   console.log(`   Companies: ${portals.greenhouse.length + portals.lever.length + portals.ashby.length}\n`);
 }
@@ -163,7 +206,7 @@ async function scanBoard(name, companies, fetcher, normalizer) {
     if (co.note?.includes("current employer")) return;
     const { jobs, err } = await fetcher(co.slug);
     if (err) { errors.push({ company: co.name, error: err }); return; }
-    const matched = jobs.map(j => normalizer(j, co)).filter(j => matches(j, roles, expYears));
+    const matched = jobs.map(j => normalizer(j, co)).filter(j => matches(j, roles, expYears, fullTime2027Only, excludeInternships, gradYear));
     if (matched.length && !jsonMode) process.stdout.write(` ${co.name}(${matched.length})`);
     results.push(...matched);
   });
@@ -174,6 +217,31 @@ async function scanBoard(name, companies, fetcher, normalizer) {
 await scanBoard("greenhouse", portals.greenhouse, fetchGreenhouse, normGH);
 await scanBoard("lever",      portals.lever,      fetchLever,      normLV);
 await scanBoard("ashby",      portals.ashby,      fetchAshby,      normAB);
+
+// Include 2027 Full-Time University Graduate Tracks if fullTime2027Only is enabled
+if (fullTime2027Only) {
+  try {
+    const { UNIVERSITY_PROGRAMS } = await import("./search-2027-fulltime.mjs");
+    if (Array.isArray(UNIVERSITY_PROGRAMS)) {
+      for (const p of UNIVERSITY_PROGRAMS) {
+        results.push({
+          source: "university_track",
+          company: p.company,
+          tier: p.tier || "1",
+          title: p.role,
+          location: p.location,
+          url: p.portal_url,
+          posted_at: new Date().toISOString(),
+          department: p.domain,
+          remote: false,
+          snippet: `${p.eligibility}. CTC: ${p.ctc}. Track: ${p.application_track}`
+        });
+      }
+    }
+  } catch (err) {
+    // Silent fallback
+  }
+}
 
 // Dedup by title+company
 const seen = new Set();

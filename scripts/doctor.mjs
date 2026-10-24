@@ -110,15 +110,21 @@ if (fs.existsSync(cvPath)) {
 }
 
 // ── AI CLI check ──────────────────────────────────────────────────────────────
-section("AI CLI");
-let claudeFound = false, geminiFound = false;
+section("AI Environment / CLI");
+let claudeFound = false, geminiFound = false, ideFound = false;
+
+const geminiDir = path.join(process.env.USERPROFILE || "", ".gemini");
+if (fs.existsSync(geminiDir) || process.env.GEMINI_API_KEY) {
+  ideFound = true;
+  ok("Antigravity / Gemini AI Environment detected ✓");
+}
 
 try {
   execSync("claude --version", { stdio: "pipe" });
   claudeFound = true;
   ok("Claude Code CLI is installed");
 } catch {
-  warn("Claude Code CLI not found", "Install from: https://claude.ai/code  (optional if using Gemini)");
+  if (!ideFound) warn("Claude Code CLI not found", "Install from: https://claude.ai/code  (optional if using Gemini)");
 }
 
 try {
@@ -126,10 +132,10 @@ try {
   geminiFound = true;
   ok("Gemini CLI is installed");
 } catch {
-  warn("Gemini CLI not found", "Install from: https://github.com/google-gemini/gemini-cli  (optional if using Claude)");
+  if (!ideFound) warn("Gemini CLI not found", "Install from: https://github.com/google-gemini/gemini-cli  (optional if using Claude)");
 }
 
-if (!claudeFound && !geminiFound) {
+if (!claudeFound && !geminiFound && !ideFound) {
   fail("No AI CLI found — you need at least one: Claude Code or Gemini CLI");
 }
 

@@ -82,10 +82,25 @@ try {
 
 fs.mkdirSync(outputDir, { recursive: true });
 
+let candidatePrefix = "resume";
+const profilePath = path.join(ROOT, "config/profile.yml");
+if (fs.existsSync(profilePath)) {
+  const profileText = fs.readFileSync(profilePath, "utf8");
+  const nameMatch = profileText.match(/name:\s*(.+)/);
+  if (nameMatch && nameMatch[1].trim()) {
+    candidatePrefix = nameMatch[1].trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+} else {
+  const firstHeaderMatch = cvMarkdown.match(/^#\s+(.+)$/m);
+  if (firstHeaderMatch) {
+    candidatePrefix = firstHeaderMatch[1].trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+}
+
 const safeCompany = company.toLowerCase().replace(/[^a-z0-9]/g, "-");
 const safeRole    = role.toLowerCase().replace(/[^a-z0-9]/g, "-");
 const date        = new Date().toISOString().split("T")[0];
-const filename    = `anoj-sk_${safeCompany}_${safeRole}_${date}.pdf`;
+const filename    = `${candidatePrefix}_${safeCompany}_${safeRole}_${date}.pdf`;
 const outputPath  = path.join(outputDir, filename);
 
 console.log(`\n📄 Generating PDF...`);

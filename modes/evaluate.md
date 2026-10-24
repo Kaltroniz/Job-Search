@@ -7,6 +7,17 @@ If URL: navigate and extract title, company, location, salary, experience requir
 If page is dead (404, "position closed"): tell the user immediately and stop.
 If JD text pasted: parse the same fields, note any missing ones.
 
+## Gate 0 — Full-Time 2027 Graduation Eligibility Check
+Candidate constraint (`job_type_preference: full_time_only`, `graduation_year: 2027` in `config/profile.yml`):
+- **Candidate seeks FULL-TIME OFFERS ONLY for the Class of 2027**. Candidate does NOT want internships.
+- **Disqualification 1 (Internship)**: If the role is an internship, co-op, or temporary student training:
+  - **Hard Gate Triggered**: Mark Grade F (`INELIGIBLE: Role is an internship. Candidate strictly seeks 2027 full-time graduate offers`).
+  - Do not recommend applying.
+- **Disqualification 2 (Lateral / Immediate Full-Time Onboarding)**: If the posting requires immediate onboarding (prior to 2027 graduation) or requires 2+ years of post-graduation experience:
+  - **Hard Gate Triggered**: Mark Grade F (`INELIGIBLE: Lateral role requiring immediate onboarding or 2+ years experience. Candidate is on campus graduating in 2027`).
+- **Eligible Roles**: Full-time Graduate Software Engineer / Associate Software Engineer / SDE-1 / Campus SDE positions open to the **Batch of 2027 / Class of 2027 / New Grads**.
+- If verified as a 2027 full-time graduate opening: **PASS (Eligible for 2027 Full-Time Offer)** → Proceed to Step 2.
+
 ## Step 2 — Block G: Ghost Job Check
 Flag if 2+ of these are true:
 - No salary disclosed
