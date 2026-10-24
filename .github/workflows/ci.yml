@@ -14,12 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install dependencies
+        run: npm ci || npm install
       - name: Validate portals/india.yml is valid YAML
-        run: node -e "
-          const fs = require('fs');
-          const content = fs.readFileSync('portals/india.yml', 'utf8');
-          console.log('portals/india.yml: valid YAML structure');
-        "
+        run: |
+          node --input-type=module -e "import fs from 'fs'; import yaml from 'js-yaml'; yaml.load(fs.readFileSync('portals/india.yml', 'utf8')); console.log('portals/india.yml: valid YAML structure');"
       - name: Check required files exist
         run: |
           test -f CLAUDE.md && echo 'CLAUDE.md ok'
@@ -29,7 +28,9 @@ jobs:
           test -f scripts/scan.mjs && echo 'scan.mjs ok'
           test -f scripts/doctor.mjs && echo 'doctor.mjs ok'
           test -f scripts/generate-pdf.mjs && echo 'generate-pdf.mjs ok'
-      - name: Verify scan.mjs has no syntax errors
-        run: node --check scripts/scan.mjs && echo 'scan.mjs syntax ok'
-      - name: Verify doctor.mjs has no syntax errors
-        run: node --check scripts/doctor.mjs && echo 'doctor.mjs syntax ok'
+      - name: Verify scripts syntax
+        run: |
+          node --check scripts/scan.mjs && echo 'scan.mjs syntax ok'
+          node --check scripts/doctor.mjs && echo 'doctor.mjs syntax ok'
+          node --check scripts/daily-job-digest.mjs && echo 'daily-job-digest.mjs syntax ok'
+          node --check scripts/watch-2027-sde.mjs && echo 'watch-2027-sde.mjs syntax ok'
