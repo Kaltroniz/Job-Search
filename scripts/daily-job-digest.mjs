@@ -483,37 +483,52 @@ async function main() {
   console.log(textContent);
 
   // Send Email if SMTP configured
-  if (!SMTP_USER || !SMTP_PASS) {
+  const cleanUser = (process.env.EMAIL_USER || process.env.SMTP_USER || "").trim();
+  const cleanPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || "").replace(/\s+/g, "");
+
+  if (!cleanUser || !cleanPass) {
+    if (process.env.CI) {
+      console.error("\n❌ CRITICAL: EMAIL_USER or EMAIL_PASS is missing or empty in GitHub Secrets!");
+      console.error("   Ensure your repository has these secrets added under:");
+      console.error("   Repo -> Settings -> Secrets and variables -> Actions\n");
+      process.exit(1);
+    }
     console.log("ℹ️  SMTP credentials (EMAIL_USER / EMAIL_PASS) not detected in environment.");
     console.log("   -> Email delivery skipped. Artifacts saved locally.\n");
     return;
   }
 
-  console.log(`🚀 Dispatching email via ${SMTP_HOST} to ${RECIPIENT_EMAIL}...`);
+  console.log(`🚀 Dispatching email via Gmail to ${RECIPIENT_EMAIL}...`);
 
   const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
+    service: "gmail",
     auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS
+      user: cleanUser,
+      pass: cleanPass
     }
   });
 
   try {
     const info = await transporter.sendMail({
-      from: `"Career-Ops SDE Watcher" <${SMTP_USER}>`,
+      from: `"Career-Ops SDE Watcher" <${cleanUser}>`,
       to: RECIPIENT_EMAIL,
       subject: `🎯 Daily SDE Opportunities (${TODAY}): ${list2027Jobs.length} for 2027 & ${list0ExpJobs.length} SDE-1 (0 Exp)`,
       text: textContent,
       html: htmlContent
     });
 
-    console.log(`✅ Email successfully sent! Message ID: ${info.messageId}`);
+    console.log(`\n✅ Email successfully sent! Message ID: ${info.messageId}`);
+    console.log(`📬 Delivered to: ${RECIPIENT_EMAIL}`);
   } catch (err) {
-    console.error(`❌ Failed to send email: ${err.message}`);
+    console.error(`\n❌ Failed to send email via SMTP: ${err.message}`);
+    if (process.env.CI) {
+      process.exit(1);
+    }
   }
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});
+
