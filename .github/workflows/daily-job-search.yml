@@ -29,12 +29,3 @@ jobs:
           SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
           SMTP_PORT: ${{ secrets.SMTP_PORT || '465' }}
         run: node scripts/daily-job-digest.mjs
-
-      - name: Upload Output Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-sde-job-digest
-          path: |
-            output/latest_daily_digest.html
-            output/latest_daily_digest.md
